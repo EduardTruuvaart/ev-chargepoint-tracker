@@ -19,7 +19,6 @@ vendor/
 .vscode/
 .DS_Store
 .idea
-tracker
 main
 !**/*.go
 
