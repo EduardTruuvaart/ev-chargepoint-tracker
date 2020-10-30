@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,7 +10,13 @@ import (
 )
 
 func main() {
-	var stationID = getStationID(os.Args)
+	stationID, err := getStationID(os.Args)
+
+	if err != nil {
+		fmt.Println("Error occured: ", err)
+		return
+	}
+
 	apiKey := os.Getenv("APIKEY")
 	if len(apiKey) == 0 {
 		fmt.Println("APIKEY env var is not set!")
@@ -21,11 +28,11 @@ func main() {
 	fmt.Println(station)
 }
 
-func getStationID(args []string) int64 {
+func getStationID(args []string) (int64, error) {
 	if len(args) == 2 {
 		var stationID, _ = strconv.ParseInt(args[1], 10, 64)
-		return stationID
+		return stationID, nil
 	}
 
-	return 806
+	return 0, errors.New("StationID is not provided")
 }
