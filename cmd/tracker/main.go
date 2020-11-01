@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/repository"
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service"
 )
 
@@ -25,8 +26,12 @@ func main() {
 	}
 
 	stationService := new(service.StationService)
-	var station *model.Station = stationService.GetStatus(stationID, apiKey)
-	fmt.Println(station)
+	stationRepository := new(repository.StationRepository)
+
+	var savedStationStatus, _ = stationRepository.FindByID(stationID)
+	var currentStationStatus *model.Station = stationService.GetStatus(stationID, apiKey)
+	fmt.Println(savedStationStatus)
+	fmt.Println(currentStationStatus)
 }
 
 func getStationID(args []string) (int64, error) {
