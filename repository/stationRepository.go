@@ -39,7 +39,6 @@ func (*StationRepository) FindByID(ID int64) (*model.Station, error) {
 	})
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
 

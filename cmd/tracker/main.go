@@ -28,7 +28,12 @@ func main() {
 	stationService := new(service.StationService)
 	stationRepository := new(repository.StationRepository)
 
-	var savedStationStatus, _ = stationRepository.FindByID(stationID)
+	savedStationStatus, err := stationRepository.FindByID(stationID)
+	if err != nil {
+		fmt.Println("Repository error occured: ", err)
+		return
+	}
+
 	var currentStationStatus *model.Station = stationService.GetStatus(stationID, apiKey)
 	fmt.Println(savedStationStatus)
 	fmt.Println(currentStationStatus)
