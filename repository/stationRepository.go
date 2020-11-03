@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
 	"github.com/aws/aws-sdk-go/aws"
@@ -22,21 +23,19 @@ func (*StationRepository) FindByID(ID int64) (*model.Station, error) {
 
 	// Create DynamoDB client
 	svc := dynamodb.New(sess)
-	tableName := "Movies"
-	movieName := "The Big New Movie"
-	movieYear := "2015"
+	tableName := "station"
+	stationID := strconv.FormatInt(ID, 10)
 
-	result, err := svc.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+	params := &dynamodb.GetItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
-			"Year": {
-				N: aws.String(movieYear),
-			},
-			"Title": {
-				S: aws.String(movieName),
+			"stationId": {
+				S: aws.String(stationID),
 			},
 		},
-	})
+		TableName: aws.String(tableName),
+	}
+
+	result, err := svc.GetItem(params)
 
 	if err != nil {
 		return nil, err

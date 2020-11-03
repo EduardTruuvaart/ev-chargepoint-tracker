@@ -25,6 +25,7 @@ func main() {
 		return
 	}
 
+	fmt.Println("Checking station ", stationID)
 	stationService := new(service.StationService)
 	stationRepository := new(repository.StationRepository)
 
