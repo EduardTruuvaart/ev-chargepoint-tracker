@@ -5,20 +5,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
 )
 
 type StationService struct {
-	getStatus func(stationID int64, apiKey string) *model.Station
+	getStatus func(stationID string, apiKey string) *model.Station
 }
 
-func (service *StationService) GetStatus(stationID int64, apiKey string) *model.Station {
+func (service *StationService) GetStatus(stationID string, apiKey string) *model.Station {
 	fmt.Println("Key: ", apiKey)
 	fmt.Println("Selected station ID: ", stationID)
 	client := &http.Client{}
 
-	requestURI := fmt.Sprintf("https://api.zap-map.com/v5/chargepoints/location/%d/status", stationID)
+	requestURI := fmt.Sprintf("https://api.zap-map.com/v5/chargepoints/location/%s/status", stationID)
+
 	req, err := http.NewRequest("GET", requestURI, nil)
 	req.Header.Add("X-Api-Key", apiKey)
 
@@ -49,7 +51,8 @@ func (service *StationService) GetStatus(stationID int64, apiKey string) *model.
 	devicesArr := devices.([]interface{})
 	var statusHistory []interface{} = devicesArr[0].((map[string]interface{}))["status_history"].([]interface{})
 	var currentStatus string = statusHistory[0].(map[string]interface{})["description"].(string)
-	var stationIDJson float64 = chargePointsData.(map[string]interface{})["id"].(float64)
+	var stationIDFloat float64 = chargePointsData.(map[string]interface{})["id"].(float64)
+	stationIDStr := strconv.Itoa((int(stationIDFloat)))
 
-	return model.NewStation(stationIDJson, currentStatus)
+	return model.NewStation(stationIDStr, currentStatus)
 }

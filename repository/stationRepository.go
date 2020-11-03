@@ -3,7 +3,6 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,10 +12,10 @@ import (
 )
 
 type StationRepository struct {
-	findByID func(ID int64) (*model.Station, error)
+	findByID func(ID string) (*model.Station, error)
 }
 
-func (*StationRepository) FindByID(ID int64) (*model.Station, error) {
+func (*StationRepository) FindByID(ID string) (*model.Station, error) {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
@@ -24,12 +23,11 @@ func (*StationRepository) FindByID(ID int64) (*model.Station, error) {
 	// Create DynamoDB client
 	svc := dynamodb.New(sess)
 	tableName := "station"
-	stationID := strconv.FormatInt(ID, 10)
 
 	params := &dynamodb.GetItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
-			"stationId": {
-				S: aws.String(stationID),
+			"id": {
+				S: aws.String(ID),
 			},
 		},
 		TableName: aws.String(tableName),

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/repository"
@@ -25,7 +24,6 @@ func main() {
 		return
 	}
 
-	fmt.Println("Checking station ", stationID)
 	stationService := new(service.StationService)
 	stationRepository := new(repository.StationRepository)
 
@@ -40,17 +38,16 @@ func main() {
 	fmt.Println(currentStationStatus)
 }
 
-func getStationID(args []string) (int64, error) {
+func getStationID(args []string) (string, error) {
 	if len(args) == 2 {
-		var stationID, _ = strconv.ParseInt(args[1], 10, 64)
+		var stationID = args[1]
 		return stationID, nil
 	}
 
 	stationID := os.Getenv("STATIONID")
 	if len(stationID) > 0 {
-		stationIDNum, _ := strconv.ParseInt(stationID, 10, 64)
-		return stationIDNum, nil
+		return stationID, nil
 	}
 
-	return 0, errors.New("StationID is not provided")
+	return "", errors.New("StationID is not provided")
 }
