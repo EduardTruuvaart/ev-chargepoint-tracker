@@ -34,7 +34,12 @@ func main() {
 	}
 
 	var currentStationStatus *model.Station = stationService.GetStatus(stationID, apiKey)
-	fmt.Println(savedStationStatus)
+
+	if savedStationStatus == nil {
+		stationRepository.Save(currentStationStatus)
+	}
+
+	//fmt.Println(savedStationStatus)
 	fmt.Println(currentStationStatus)
 }
 
