@@ -12,4 +12,4 @@ COPY . .
 #RUN go get -d -v
 RUN go build ./cmd/tracker/main.go
 
-ENTRYPOINT ["go", "run", "./cmd/tracker/main.go", "$1"]
+ENTRYPOINT ["go", "run", "./cmd/tracker/main.go"]

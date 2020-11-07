@@ -55,11 +55,6 @@ func notifyStatusChanged(newStatus string) {
 }
 
 func getStationID(args []string) (string, error) {
-	if len(args) == 2 {
-		var stationID = args[1]
-		return stationID, nil
-	}
-
 	stationID := os.Getenv("STATIONID")
 	if len(stationID) > 0 {
 		return stationID, nil
