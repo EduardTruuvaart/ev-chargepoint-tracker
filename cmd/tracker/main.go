@@ -37,10 +37,21 @@ func main() {
 
 	if savedStationStatus == nil {
 		stationRepository.Save(currentStationStatus)
+		notifyStatusChanged(currentStationStatus.Status)
+		return
 	}
 
-	//fmt.Println(savedStationStatus)
-	fmt.Println(currentStationStatus)
+	if currentStationStatus.Status != savedStationStatus.Status {
+		stationRepository.Save(currentStationStatus)
+		notifyStatusChanged(currentStationStatus.Status)
+		return
+	}
+
+	fmt.Println("Status unchanged: ", currentStationStatus.Status)
+}
+
+func notifyStatusChanged(newStatus string) {
+	fmt.Println("New status: ", newStatus)
 }
 
 func getStationID(args []string) (string, error) {
