@@ -48,7 +48,7 @@ func (*StationRepository) FindByID(ID string) (*model.Station, error) {
 
 	err = dynamodbattribute.UnmarshalMap(result.Item, &station)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to unmarshal Record, %v", err))
+		panic(fmt.Sprintf("Failed to unmarshal record, %v", err))
 	}
 
 	return &station, nil
@@ -84,6 +84,6 @@ func (*StationRepository) Save(station *model.Station) {
 
 	_, err := svc.UpdateItem(input)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to unmarshal Record, %v", err))
+		panic(fmt.Sprintf("Failed to update record, %v", err))
 	}
 }
