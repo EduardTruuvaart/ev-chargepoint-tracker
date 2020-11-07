@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/repository"
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service"
 )
 
@@ -24,15 +25,45 @@ func main() {
 	}
 
 	stationService := new(service.StationService)
-	station := stationService.GetStatus(stationID, apiKey)
-	fmt.Println(station)
+	stationRepository := new(repository.StationRepository)
+
+	savedStationStatus, err := stationRepository.FindByID(stationID)
+	if err != nil {
+		fmt.Println("Repository error occured: ", err)
+		return
+	}
+
+	var currentStationStatus *model.Station = stationService.GetStatus(stationID, apiKey)
+
+	if savedStationStatus == nil {
+		stationRepository.Save(currentStationStatus)
+		notifyStatusChanged(currentStationStatus.Status)
+		return
+	}
+
+	if currentStationStatus.Status != savedStationStatus.Status {
+		stationRepository.Save(currentStationStatus)
+		notifyStatusChanged(currentStationStatus.Status)
+		return
+	}
+
+	fmt.Println("Status unchanged: ", currentStationStatus.Status)
 }
 
-func getStationID(args []string) (int64, error) {
+func notifyStatusChanged(newStatus string) {
+	fmt.Println("New status: ", newStatus)
+}
+
+func getStationID(args []string) (string, error) {
 	if len(args) == 2 {
-		var stationID, _ = strconv.ParseInt(args[1], 10, 64)
+		var stationID = args[1]
 		return stationID, nil
 	}
 
-	return 0, errors.New("StationID is not provided")
+	stationID := os.Getenv("STATIONID")
+	if len(stationID) > 0 {
+		return stationID, nil
+	}
+
+	return "", errors.New("StationID is not provided")
 }
