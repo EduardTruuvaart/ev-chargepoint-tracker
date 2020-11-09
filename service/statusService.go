@@ -26,12 +26,13 @@ func (service *StationService) GetStatus(stationID string, apiKey string) *model
 
 	if err != nil {
 		fmt.Println("Get Error")
+		return nil
 	}
 
 	resp, err := client.Do(req)
-
 	if err != nil {
 		fmt.Println("Get Error")
+		return nil
 	}
 
 	defer resp.Body.Close()
@@ -41,17 +42,18 @@ func (service *StationService) GetStatus(stationID string, apiKey string) *model
 		fmt.Println("Body Error")
 	}
 
-	bodyStr := string(body)
-
 	var result map[string]interface{}
-	json.Unmarshal([]byte(bodyStr), &result)
+	json.Unmarshal(body, &result)
 
-	var chargePointsData interface{} = result["resources"].(map[string]interface{})["chargepoint_location_status"].(map[string]interface{})["data"]
-	var devices interface{} = chargePointsData.(map[string]interface{})["devices"]
+	// не совсем это понял, почему так сложно. Если ты знаешь структуру возвращаемого результата, то просто создай пару структурок,
+	// у которых будут поля типа `json:"field_name"`, ну и просто когда делаешь анмаршаллинг, то результат у тебя будет не map[string]interface{},
+	// а типа твоей новой структуры. Так быстрее, понятнее и проще.
+	var chargePointsData = result["resources"].(map[string]interface{})["chargepoint_location_status"].(map[string]interface{})["data"]
+	var devices = chargePointsData.(map[string]interface{})["devices"]
 	devicesArr := devices.([]interface{})
-	var statusHistory []interface{} = devicesArr[0].((map[string]interface{}))["status_history"].([]interface{})
-	var currentStatus string = statusHistory[0].(map[string]interface{})["description"].(string)
-	var stationIDFloat float64 = chargePointsData.(map[string]interface{})["id"].(float64)
+	var statusHistory = devicesArr[0].((map[string]interface{}))["status_history"].([]interface{})
+	var currentStatus = statusHistory[0].(map[string]interface{})["description"].(string)
+	var stationIDFloat = chargePointsData.(map[string]interface{})["id"].(float64)
 	stationIDStr := strconv.Itoa((int(stationIDFloat)))
 
 	return model.NewStation(stationIDStr, currentStatus)

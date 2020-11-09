@@ -10,6 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
+const tableName = "station"
+
 type StationRepository struct {
 	findByID func(ID string) (*model.Station, error)
 	save     func(station *model.Station)
@@ -22,7 +24,6 @@ func (*StationRepository) FindByID(ID string) (*model.Station, error) {
 
 	// Create DynamoDB client
 	svc := dynamodb.New(sess)
-	tableName := "station"
 
 	params := &dynamodb.GetItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
@@ -34,7 +35,6 @@ func (*StationRepository) FindByID(ID string) (*model.Station, error) {
 	}
 
 	result, err := svc.GetItem(params)
-
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +44,7 @@ func (*StationRepository) FindByID(ID string) (*model.Station, error) {
 		return nil, nil
 	}
 
-	station := model.Station{}
-
+	var station model.Station
 	err = dynamodbattribute.UnmarshalMap(result.Item, &station)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to unmarshal record, %v", err))
@@ -61,7 +60,6 @@ func (*StationRepository) Save(station *model.Station) {
 
 	// Create DynamoDB client
 	svc := dynamodb.New(sess)
-	tableName := "station"
 
 	input := &dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
@@ -82,8 +80,7 @@ func (*StationRepository) Save(station *model.Station) {
 		ReturnValues: aws.String("UPDATED_NEW"),
 	}
 
-	_, err := svc.UpdateItem(input)
-	if err != nil {
+	if _, err := svc.UpdateItem(input); err != nil {
 		panic(fmt.Sprintf("Failed to update record, %v", err))
 	}
 }

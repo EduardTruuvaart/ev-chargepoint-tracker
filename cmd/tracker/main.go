@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -11,21 +10,19 @@ import (
 )
 
 func main() {
-	stationID, err := getStationID(os.Args)
 
-	if err != nil {
-		fmt.Println("Error occured: ", err)
-		return
+	stationID := os.Getenv("STATIONID")
+	if len(stationID) == 0 {
+		panic("StationID is not provided")
 	}
 
 	apiKey := os.Getenv("APIKEY")
 	if len(apiKey) == 0 {
-		fmt.Println("APIKEY env var is not set!")
-		return
+		panic("APIKEY env var is not set!")
 	}
 
-	stationService := new(service.StationService)
-	stationRepository := new(repository.StationRepository)
+	var stationService service.StationService
+	var stationRepository repository.StationRepository
 
 	savedStationStatus, err := stationRepository.FindByID(stationID)
 	if err != nil {
@@ -52,13 +49,4 @@ func main() {
 
 func notifyStatusChanged(newStatus string) {
 	fmt.Println("New status: ", newStatus)
-}
-
-func getStationID(args []string) (string, error) {
-	stationID := os.Getenv("STATIONID")
-	if len(stationID) > 0 {
-		return stationID, nil
-	}
-
-	return "", errors.New("StationID is not provided")
 }
