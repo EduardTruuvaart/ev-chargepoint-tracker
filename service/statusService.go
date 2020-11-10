@@ -45,9 +45,6 @@ func (service *StationService) GetStatus(stationID string, apiKey string) *model
 	var result map[string]interface{}
 	json.Unmarshal(body, &result)
 
-	// не совсем это понял, почему так сложно. Если ты знаешь структуру возвращаемого результата, то просто создай пару структурок,
-	// у которых будут поля типа `json:"field_name"`, ну и просто когда делаешь анмаршаллинг, то результат у тебя будет не map[string]interface{},
-	// а типа твоей новой структуры. Так быстрее, понятнее и проще.
 	var chargePointsData = result["resources"].(map[string]interface{})["chargepoint_location_status"].(map[string]interface{})["data"]
 	var devices = chargePointsData.(map[string]interface{})["devices"]
 	devicesArr := devices.([]interface{})
