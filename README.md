@@ -1,5 +1,5 @@
 # EV Chargepoint Tracker
-Tracking availability of electric vehicle charge points
+App is tracking availability of EV charge points
 
 ## Running using Docker container
 ```
