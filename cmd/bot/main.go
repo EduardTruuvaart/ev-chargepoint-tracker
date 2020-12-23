@@ -90,26 +90,27 @@ func sendTextToTelegramChat(chatID int, text string) (string, error) {
 	return bodyString, nil
 }
 
-func handle(ctx context.Context, name events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Print("Request body: ", name)
-	log.Print("context ", ctx)
-	headers := map[string]string{"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
+func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Print("Request body: ", request.Body)
+
+	var update bot.Update
+	json.Unmarshal([]byte(request.Body), &update)
+
+	log.Print("Message text: ", update.Message.Text)
 
 	code := 200
-	// response, error := json.Marshal(MyReturn{Response: "Hello, " + name.Body})
-	// if error != nil {
-	// 	log.Println(error)
-	// 	response = []byte("Internal Server Error")
-	// 	code = 500
-	// }
+	return createAPIResponse(code), nil
+}
 
+func createAPIResponse(code int) events.APIGatewayProxyResponse {
+	headers := map[string]string{"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
 	return events.APIGatewayProxyResponse{
 		StatusCode:        code,
 		Headers:           headers,
 		MultiValueHeaders: http.Header{"Set-Cookie": {"Ding", "Ping"}},
 		Body:              "Hello, World!",
 		IsBase64Encoded:   false,
-	}, nil
+	}
 }
 
 func main() {
