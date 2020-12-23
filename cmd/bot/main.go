@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model/bot"
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service"
 )
 
 func parseTelegramRequest(r *http.Request) (*bot.Update, error) {
@@ -92,11 +93,21 @@ func sendTextToTelegramChat(chatID int, text string) (string, error) {
 
 func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Print("Request body: ", request.Body)
+	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
 
 	var update bot.Update
 	json.Unmarshal([]byte(request.Body), &update)
 
-	log.Print("Message text: ", update.Message.Text)
+	bot := service.NewTelegramBot(botToken)
+
+	switch text := update.Message.Text; text {
+	case "/start":
+		bot.Answer(update.Message.Chat.ID, "Hello!")
+	case "/stop":
+		bot.Answer(update.Message.Chat.ID, "Bye!")
+	default:
+		log.Print("Unknown text")
+	}
 
 	code := 200
 	return createAPIResponse(code), nil
