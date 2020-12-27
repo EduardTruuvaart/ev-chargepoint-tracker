@@ -6,12 +6,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"strconv"
 )
 
 type TelegramBot struct {
 	BotToken string
+	answer   func(chatID int, text string)
 }
 
 func NewTelegramBot(botToken string) *TelegramBot {
@@ -19,13 +18,15 @@ func NewTelegramBot(botToken string) *TelegramBot {
 }
 
 func (bot *TelegramBot) Answer(chatID int, text string) (string, error) {
+	var jsonStr = []byte(fmt.Sprintf(`
+{
+		"chat_id": %d,
+		"text": "%v",
+		"parse_mode": "html"
+}`, chatID, text))
+
 	var telegramAPI string = "https://api.telegram.org/bot" + bot.BotToken + "/sendMessage"
-	response, err := http.PostForm(
-		telegramAPI,
-		url.Values{
-			"chat_id": {strconv.Itoa(chatID)},
-			"text":    {text},
-		})
+	response, err := http.Post(telegramAPI, "application/json", bytes.NewBuffer(jsonStr))
 
 	if err != nil {
 		log.Printf("error when posting text to the chat: %s", err.Error())

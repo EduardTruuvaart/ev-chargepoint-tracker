@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
-	"github.com/EduardTruuvaart/ev-chargepoint-tracker/repository"
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service"
 )
 
@@ -21,32 +21,50 @@ func main() {
 		panic("APIKEY env var is not set!")
 	}
 
-	var stationService service.StationService
-	var stationRepository repository.StationRepository
+	stationService := service.NewStationService(apiKey)
 
-	savedStationStatus, err := stationRepository.FindByID(stationID)
-	if err != nil {
-		fmt.Println("Repository error occured: ", err)
-		return
-	}
+	location := model.Location{Latitude: 51.394284, Longitude: -0.304267}
+	stations := stationService.Search(location)
+	stations = stationService.FulfillAllDetails(stations)
+	stringyfiedResults := createStationsResponseString(stations)
+	fmt.Print(stringyfiedResults)
 
-	var currentStationStatus *model.Station = stationService.GetStatus(stationID, apiKey)
+	// var stationRepository repository.StationRepository
 
-	if savedStationStatus == nil {
-		stationRepository.Save(currentStationStatus)
-		notifyStatusChanged(currentStationStatus.Status)
-		return
-	}
+	// savedStationStatus, err := stationRepository.FindByID(stationID)
+	// if err != nil {
+	// 	fmt.Println("Repository error occured: ", err)
+	// 	return
+	// }
 
-	if currentStationStatus.Status != savedStationStatus.Status {
-		stationRepository.Save(currentStationStatus)
-		notifyStatusChanged(currentStationStatus.Status)
-		return
-	}
+	// var currentStationStatus *model.Station = stationService.GetStatus(stationID)
 
-	fmt.Println("Status unchanged: ", currentStationStatus.Status)
+	// if savedStationStatus == nil {
+	// 	stationRepository.Save(currentStationStatus)
+	// 	notifyStatusChanged(currentStationStatus.Status)
+	// 	return
+	// }
+
+	// if currentStationStatus.Status != savedStationStatus.Status {
+	// 	stationRepository.Save(currentStationStatus)
+	// 	notifyStatusChanged(currentStationStatus.Status)
+	// 	return
+	// }
+
+	// fmt.Println("Status unchanged: ", currentStationStatus.Status)
 }
 
 func notifyStatusChanged(newStatus string) {
 	fmt.Println("New status: ", newStatus)
+}
+
+func createStationsResponseString(stations []model.Station) string {
+	stationsStrArr := []string{}
+	for index, element := range stations {
+		stationStr := fmt.Sprintf("%v. %v", index+1, element)
+		stationsStrArr = append(stationsStrArr, stationStr)
+	}
+
+	stringyfiedResults := strings.Join(stationsStrArr, "\n")
+	return stringyfiedResults
 }
