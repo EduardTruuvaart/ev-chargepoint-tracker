@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -100,9 +101,18 @@ func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.
 
 	bot := service.NewTelegramBot(botToken)
 
+	if update.Message.Location != nil {
+		bot.Answer(update.Message.Chat.ID, "Here is all stations in 1 KM radius:")
+		locationText := fmt.Sprintf("Lat %#v\nLon  %#v", update.Message.Location.Latitude, update.Message.Location.Longitude)
+		bot.Answer(update.Message.Chat.ID, locationText)
+		return createAPIResponse(200), nil
+	}
+
 	switch text := update.Message.Text; text {
 	case "/start":
-		bot.Answer(update.Message.Chat.ID, "Hello!")
+		bot.Answer(update.Message.Chat.ID, "Hello there! Just send me your location and I will find nearby stations!")
+	case "/locate":
+		bot.RequestLocation(update.Message.Chat.ID, "Please provide your location")
 	case "/stop":
 		bot.Answer(update.Message.Chat.ID, "Bye!")
 	default:
