@@ -31,10 +31,15 @@ func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.
 	if update.Message.Location != nil {
 		bot.Answer(update.Message.Chat.ID, "Here is all stations in 2 KM radius:")
 		stations := stationService.Search(*update.Message.Location)
-		stations = stationService.FulfillAllDetails(stations)
-		stringyfiedResults := createStationsResponseString(stations)
+		if len(stations) > 0 {
+			stations = stationService.FulfillAllDetails(stations)
+			stringyfiedResults := createStationsResponseString(stations)
 
-		bot.Answer(update.Message.Chat.ID, stringyfiedResults)
+			bot.Answer(update.Message.Chat.ID, stringyfiedResults)
+			return createAPIResponse(200), nil
+		}
+
+		bot.Answer(update.Message.Chat.ID, "No stations found :(")
 		return createAPIResponse(200), nil
 	}
 
@@ -67,7 +72,7 @@ func createAPIResponse(code int) events.APIGatewayProxyResponse {
 func createStationsResponseString(stations []model.Station) string {
 	stationsStrArr := []string{}
 	for index, element := range stations {
-		stationStr := fmt.Sprintf("%v. %v - <b><i>%v</i></b>", index+1, element, element.Status)
+		stationStr := fmt.Sprintf("%v. %v - <b><i>%v</i></b>", index+1, element, element.Devices[0].Status)
 		stationsStrArr = append(stationsStrArr, stationStr)
 	}
 

@@ -23,7 +23,8 @@ func main() {
 
 	stationService := service.NewStationService(apiKey)
 
-	location := model.Location{Latitude: 51.394284, Longitude: -0.304267}
+	location := model.Location{Latitude: 51.693463, Longitude: -0.413936} // Leavesden
+
 	stations := stationService.Search(location)
 	stations = stationService.FulfillAllDetails(stations)
 	stringyfiedResults := createStationsResponseString(stations)
@@ -61,7 +62,7 @@ func notifyStatusChanged(newStatus string) {
 func createStationsResponseString(stations []model.Station) string {
 	stationsStrArr := []string{}
 	for index, element := range stations {
-		stationStr := fmt.Sprintf("%v. %v", index+1, element)
+		stationStr := fmt.Sprintf("%v. %v - %v", index+1, element, element.Devices[0].Status)
 		stationsStrArr = append(stationsStrArr, stationStr)
 	}
 

@@ -1,18 +1,24 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Station struct {
 	ID               string
-	Status           string
 	Name             string
 	NetworkName      string
 	FormattedAddress string
 	PostCode         string
+	Location         Location
+	Devices          []Device
 }
 
 func NewStation(id string) *Station {
-	return &Station{ID: id}
+	return &Station{
+		ID:      id,
+		Devices: []Device{},
+	}
 }
 
 func (station Station) String() string {
