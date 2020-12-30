@@ -14,42 +14,51 @@ import (
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model/bot"
-	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service"
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service/stations"
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service/telegram"
 )
 
 func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Print("Request body: ", request.Body)
 	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
 	apiKey := os.Getenv("APIKEY")
-	stationService := service.NewStationService(apiKey)
+	stationService := stations.NewStationService(apiKey)
 
 	var update bot.Update
 	json.Unmarshal([]byte(request.Body), &update)
 
-	bot := service.NewTelegramBot(botToken)
+	bot := telegram.NewTelegramBot(botToken)
+
+	if update.CallbackQuery != nil {
+		bot.AnswerCallbackQuery(update.CallbackQuery.ID, "")
+		code := 200
+		return createAPIResponse(code), nil
+	}
 
 	if update.Message.Location != nil {
-		bot.Answer(update.Message.Chat.ID, "Here is all stations in 2 KM radius:")
-		stations := stationService.Search(*update.Message.Location)
+		currentLocation := *update.Message.Location
+		bot.AnswerWithRemoveKeyboard(update.Message.Chat.ID, "Here is all stations in 2 KM radius:")
+		stations := stationService.Search(currentLocation)
 		if len(stations) > 0 {
-			stations = stationService.FulfillAllDetails(stations)
+			stations = stationService.FulfillAllDetails(currentLocation, stations)
+
 			stringyfiedResults := createStationsResponseString(stations)
 
 			bot.Answer(update.Message.Chat.ID, stringyfiedResults)
 			return createAPIResponse(200), nil
 		}
 
-		bot.Answer(update.Message.Chat.ID, "No stations found :(")
+		bot.Answer(update.Message.Chat.ID, "No stations found &#x1F614")
 		return createAPIResponse(200), nil
 	}
 
-	switch text := update.Message.Text; text {
+	switch text := strings.ToLower(update.Message.Text); text {
 	case "/start":
-		bot.Answer(update.Message.Chat.ID, "Hello there! Just send me your location and I will find nearby stations!")
-	case "/locate":
-		bot.RequestLocation(update.Message.Chat.ID, "Please provide your location")
+		bot.RequestLocation(update.Message.Chat.ID, "Hello there! Just send me your location and I will find nearby stations!")
 	case "/stop":
 		bot.Answer(update.Message.Chat.ID, "Bye!")
+	case "cancel":
+		bot.Answer(update.Message.Chat.ID, "Oh well &#x1F644")
 	default:
 		log.Print("Unknown text")
 	}

@@ -1,13 +1,15 @@
-package service
+package stations
 
 import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service/geo"
 )
 
 type StationService struct {
@@ -15,7 +17,7 @@ type StationService struct {
 	getStatus         func(stationID string) *model.Station
 	search            func(location model.Location) []model.Station
 	getDetails        func(stationID string) *model.Station
-	fulfillAllDetails func(stations []model.Station) []model.Station
+	fulfillAllDetails func(currentLocation model.Location, stations []model.Station) []model.Station
 }
 
 func NewStationService(apiKey string) *StationService {
@@ -176,21 +178,30 @@ func (service *StationService) GetDetails(stationID string) *model.Station {
 	return station
 }
 
-func (service *StationService) FulfillAllDetails(stations []model.Station) []model.Station {
+func (service *StationService) FulfillAllDetails(currentLocation model.Location, stations []model.Station) []model.Station {
+	var geoService geo.GeoService
+
 	fulfilledStations := []model.Station{}
 	for _, element := range stations {
 		stationDetails := service.GetDetails(element.ID)
 		devices := service.GetStatus(element.ID)
-
 		station := model.NewStation(element.ID)
 		station.FormattedAddress = stationDetails.FormattedAddress
 		station.Name = stationDetails.Name
 		station.NetworkName = stationDetails.NetworkName
 		station.PostCode = stationDetails.PostCode
 		station.Location = stationDetails.Location
+		station.DistanceInKm = geoService.CalculateDistanceInKm(currentLocation, stationDetails.Location)
 		station.Devices = devices
 		fulfilledStations = append(fulfilledStations, *station)
 	}
+	service.SortByDistance(fulfilledStations)
 
 	return fulfilledStations
+}
+
+func (service *StationService) SortByDistance(stations []model.Station) {
+	sort.Slice(stations, func(i, j int) bool {
+		return stations[i].DistanceInKm < stations[j].DistanceInKm
+	})
 }

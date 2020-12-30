@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
-	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service"
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service/stations"
 )
 
 func main() {
@@ -21,12 +21,13 @@ func main() {
 		panic("APIKEY env var is not set!")
 	}
 
-	stationService := service.NewStationService(apiKey)
+	stationService := stations.NewStationService(apiKey)
 
-	location := model.Location{Latitude: 51.693463, Longitude: -0.413936} // Leavesden
+	location := model.Location{Latitude: 51.384555, Longitude: -0.320756} // Surbiton
+	//location := model.Location{Latitude: 51.693463, Longitude: -0.413936} // Leavesden
 
 	stations := stationService.Search(location)
-	stations = stationService.FulfillAllDetails(stations)
+	stations = stationService.FulfillAllDetails(location, stations)
 	stringyfiedResults := createStationsResponseString(stations)
 	fmt.Print(stringyfiedResults)
 
@@ -62,7 +63,7 @@ func notifyStatusChanged(newStatus string) {
 func createStationsResponseString(stations []model.Station) string {
 	stationsStrArr := []string{}
 	for index, element := range stations {
-		stationStr := fmt.Sprintf("%v. %v - %v", index+1, element, element.Devices[0].Status)
+		stationStr := fmt.Sprintf("%v. %v - %v - %.3f KM", index+1, element, element.Devices[0].Status, element.DistanceInKm)
 		stationsStrArr = append(stationsStrArr, stationStr)
 	}
 

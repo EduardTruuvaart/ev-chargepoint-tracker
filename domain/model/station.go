@@ -12,6 +12,7 @@ type Station struct {
 	PostCode         string
 	Location         Location
 	Devices          []Device
+	DistanceInKm     float64
 }
 
 func NewStation(id string) *Station {
