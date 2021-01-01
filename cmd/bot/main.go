@@ -31,6 +31,9 @@ func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.
 
 	if update.CallbackQuery != nil {
 		bot.AnswerCallbackQuery(update.CallbackQuery.ID, "")
+
+		processCommandRequest(bot, update.CallbackQuery.Data, update.CallbackQuery.Message.Chat.ID, stationService)
+
 		code := 200
 		return createAPIResponse(code), nil
 	}
@@ -41,10 +44,7 @@ func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.
 		stations := stationService.Search(currentLocation)
 		if len(stations) > 0 {
 			stations = stationService.FulfillAllDetails(currentLocation, stations)
-
-			stringyfiedResults := createStationsResponseString(stations)
-
-			bot.Answer(update.Message.Chat.ID, stringyfiedResults)
+			bot.SendStationSelectionButtons(update.Message.Chat.ID, "Select one for more details:", stations)
 			return createAPIResponse(200), nil
 		}
 
@@ -52,19 +52,28 @@ func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.
 		return createAPIResponse(200), nil
 	}
 
-	switch text := strings.ToLower(update.Message.Text); text {
-	case "/start":
-		bot.RequestLocation(update.Message.Chat.ID, "Hello there! Just send me your location and I will find nearby stations!")
-	case "/stop":
-		bot.Answer(update.Message.Chat.ID, "Bye!")
-	case "cancel":
-		bot.Answer(update.Message.Chat.ID, "Oh well &#x1F644")
-	default:
-		log.Print("Unknown text")
-	}
+	processCommandRequest(bot, update.Message.Text, update.Message.Chat.ID, stationService)
 
 	code := 200
 	return createAPIResponse(code), nil
+}
+
+func processCommandRequest(bot *telegram.TelegramBot, message string, chatID int, stationService *stations.StationService) {
+	loweredText := strings.ToLower(message)
+	switch text := loweredText; text {
+	case "/start":
+		bot.RequestLocation(chatID, "Hello there! Just send me your location and I will find nearby stations!")
+	case "/stop":
+		bot.Answer(chatID, "Bye!")
+	case "cancel":
+		bot.Answer(chatID, "Oh well &#x1F644")
+	}
+
+	if strings.HasPrefix(loweredText, "/details ") {
+		stringSlice := strings.Split(loweredText, " ")
+		station := stationService.GetAllDetails(stringSlice[1])
+		bot.SendStationDetails(chatID, station)
+	}
 }
 
 func createAPIResponse(code int) events.APIGatewayProxyResponse {

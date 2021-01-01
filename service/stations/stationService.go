@@ -18,6 +18,7 @@ type StationService struct {
 	search            func(location model.Location) []model.Station
 	getDetails        func(stationID string) *model.Station
 	fulfillAllDetails func(currentLocation model.Location, stations []model.Station) []model.Station
+	getAllDetails     func(stationID string) *model.Station
 }
 
 func NewStationService(apiKey string) *StationService {
@@ -198,6 +199,14 @@ func (service *StationService) FulfillAllDetails(currentLocation model.Location,
 	service.SortByDistance(fulfilledStations)
 
 	return fulfilledStations
+}
+
+func (service *StationService) GetAllDetails(stationID string) *model.Station {
+	stationDetails := service.GetDetails(stationID)
+	devices := service.GetStatus(stationID)
+	stationDetails.Devices = devices
+
+	return stationDetails
 }
 
 func (service *StationService) SortByDistance(stations []model.Station) {
