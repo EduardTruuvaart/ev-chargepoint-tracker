@@ -207,10 +207,12 @@ func renderStationDetailsText(station *model.Station) string {
 func renderStationDevicesText(devices []model.Device) string {
 	var sb strings.Builder
 	for index, element := range devices {
-		sb.WriteString(fmt.Sprintf(`<b>ID: %v</b>
-		<b>Status:</b> %v
+		sb.WriteString(fmt.Sprintf(`
+		<b>ID:</b> %v
+		<b>Status:</b> <i>%v</i>
+		<b>History:</b> <i>%v</i>
 			<b><i>Connectors:</i></b>
-				%v`, element.ID, element.Status, renderConnectorsText(element.Connectors)))
+				%v`, element.ID, element.Status, element.LastHistoryStatus(), renderConnectorsText(element.Connectors)))
 
 		if index != len(devices)-1 {
 			sb.WriteString("\n")
@@ -224,10 +226,9 @@ func renderConnectorsText(connectors []model.Connector) string {
 	var sb strings.Builder
 	for index, element := range connectors {
 		sb.WriteString(fmt.Sprintf(`
-				<b>ID: %v</b>
 				<b>Name:</b> %v
 				<b>Speed:</b> %v
-				<b>Status:</b> %v`, element.ID, element.Name, element.Speed, element.Status))
+				<b>Status:</b> %v`, element.Name, element.Speed, element.Status))
 
 		if index != len(connectors)-1 {
 			sb.WriteString("\n")

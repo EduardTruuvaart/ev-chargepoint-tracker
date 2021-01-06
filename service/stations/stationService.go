@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service/geo"
@@ -64,6 +65,7 @@ func (service *StationService) GetStatus(stationID string) []model.Device {
 		deviceIDFloat := element.(map[string]interface{})["id"].(float64)
 		deviceStatus := element.(map[string]interface{})["status"].(map[string]interface{})["description"]
 		deviceConnectorsArr := element.(map[string]interface{})["connectors"].([]interface{})
+		statusHistoryArr := element.(map[string]interface{})["status_history"].([]interface{})
 
 		device := model.NewDevice(strconv.Itoa((int(deviceIDFloat))))
 		device.Status = deviceStatus.(string)
@@ -79,6 +81,21 @@ func (service *StationService) GetStatus(stationID string) []model.Device {
 			connector.Status = connectorStatus.(string)
 			connector.Speed = connectorSpeed.(string)
 			device.Connectors = append(device.Connectors, *connector)
+		}
+
+		for _, statusHistoryElem := range statusHistoryArr {
+			dateElem := statusHistoryElem.(map[string]interface{})["date"]
+			historyDescriptionStr := statusHistoryElem.(map[string]interface{})["description"].(string)
+			historyDateStr := dateElem.(map[string]interface{})["value"].(string)
+			historyDateTitle := dateElem.(map[string]interface{})["title"].(string)
+			historyDate, _ := time.Parse(time.RFC3339, historyDateStr)
+
+			status := model.Status{
+				Description: historyDescriptionStr,
+				DateTitle:   historyDateTitle,
+				Date:        historyDate,
+			}
+			device.StatusHistory = append(device.StatusHistory, status)
 		}
 
 		devicesObjArr = append(devicesObjArr, *device)
