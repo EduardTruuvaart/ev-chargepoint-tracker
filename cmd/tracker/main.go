@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
 )
 
 func main() {
-
 	stationID := os.Getenv("STATIONID")
 	if len(stationID) == 0 {
 		panic("StationID is not provided")
@@ -21,6 +21,9 @@ func main() {
 	}
 
 	//stationService := stations.NewStationService(apiKey)
+	//devices := stationService.GetStatus("892")
+
+	//fmt.Println(devices[0].LastHistoryStatus())
 
 	// var stationRepository repository.StationRepository
 
@@ -49,6 +52,7 @@ func main() {
 
 func notifyStatusChanged(newStatus string) {
 	fmt.Println("New status: ", newStatus)
+	time.Sleep(time.Millisecond * 500)
 }
 
 func createStationsResponseString(stations []model.Station) string {

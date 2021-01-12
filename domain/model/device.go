@@ -26,7 +26,7 @@ func (device Device) String() string {
 }
 
 func (device Device) LastHistoryStatus() string {
-	if len(device.StatusHistory) > 1 { // todo: add single item display
+	if len(device.StatusHistory) > 1 {
 		duration := time.Since(device.StatusHistory[1].Date)
 		return formatDuration(device.StatusHistory[1].Description, duration)
 	} else if len(device.StatusHistory) == 1 {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
@@ -16,9 +17,9 @@ import (
 type StationService struct {
 	ApiKey            string
 	getStatus         func(stationID string) *model.Station
-	search            func(location model.Location) []model.Station
+	search            func(location model.Location) []*model.Station
 	getDetails        func(stationID string) *model.Station
-	fulfillAllDetails func(currentLocation model.Location, stations []model.Station) []model.Station
+	fulfillAllDetails func(currentLocation model.Location, stations []*model.Station) []*model.Station
 	getAllDetails     func(stationID string) *model.Station
 }
 
@@ -104,7 +105,7 @@ func (service *StationService) GetStatus(stationID string) []model.Device {
 	return devicesObjArr
 }
 
-func (service *StationService) Search(location model.Location) []model.Station {
+func (service *StationService) Search(location model.Location) []*model.Station {
 	client := &http.Client{}
 
 	requestURI := fmt.Sprintf("https://api.zap-map.com/v5/chargepoints/locations/search?lat=%v&long=%v&radius=2&unit=KM&connector-types=&networks=&payments=&location-types=&access=2&ev-models=", location.Latitude, location.Longitude)
@@ -136,11 +137,11 @@ func (service *StationService) Search(location model.Location) []model.Station {
 	var chargePointLocationsData = result["resources"].(map[string]interface{})["search_chargepoint_locations"].(map[string]interface{})["data"]
 	dataArr := chargePointLocationsData.([]interface{})
 
-	stations := []model.Station{}
+	stations := []*model.Station{}
 	for _, element := range dataArr {
 		stationIDFloat := element.(map[string]interface{})["id"].(float64)
 		station := model.NewStation(strconv.Itoa((int(stationIDFloat))))
-		stations = append(stations, *station)
+		stations = append(stations, station)
 	}
 
 	return stations
@@ -196,26 +197,54 @@ func (service *StationService) GetDetails(stationID string) *model.Station {
 	return station
 }
 
-func (service *StationService) FulfillAllDetails(currentLocation model.Location, stations []model.Station) []model.Station {
+func (service *StationService) FulfillAllDetails(currentLocation model.Location, stations []*model.Station) []*model.Station {
+	fulfilledStations := make([]*model.Station, len(stations))
+
+	var wg sync.WaitGroup
+	wg.Add(len(stations))
+
+	for i, element := range stations {
+		go func(element *model.Station, fulfilledStations []*model.Station, currentLocation model.Location, i int) {
+			defer wg.Done()
+			s := service.getAllStationDetails(element, fulfilledStations, currentLocation)
+			fulfilledStations[i] = s
+		}(element, fulfilledStations, currentLocation, i)
+	}
+
+	wg.Wait()
+
+	service.SortByDistance(fulfilledStations)
+	return fulfilledStations
+}
+
+func (service *StationService) getAllStationDetails(element *model.Station, fulfilledStations []*model.Station, currentLocation model.Location) *model.Station {
 	var geoService geo.GeoService
 
-	fulfilledStations := []model.Station{}
-	for _, element := range stations {
-		stationDetails := service.GetDetails(element.ID)
-		devices := service.GetStatus(element.ID)
-		station := model.NewStation(element.ID)
-		station.FormattedAddress = stationDetails.FormattedAddress
-		station.Name = stationDetails.Name
-		station.NetworkName = stationDetails.NetworkName
-		station.PostCode = stationDetails.PostCode
-		station.Location = stationDetails.Location
-		station.DistanceInKm = geoService.CalculateDistanceInKm(currentLocation, stationDetails.Location)
-		station.Devices = devices
-		fulfilledStations = append(fulfilledStations, *station)
-	}
-	service.SortByDistance(fulfilledStations)
+	stationDetailsChannel := make(chan *model.Station)
+	stationStatusChannel := make(chan []model.Device)
 
-	return fulfilledStations
+	go func() {
+		sd := service.GetDetails(element.ID)
+		stationDetailsChannel <- sd
+	}()
+
+	go func() {
+		d := service.GetStatus(element.ID)
+		stationStatusChannel <- d
+	}()
+
+	stationDetails := <-stationDetailsChannel
+	devices := <-stationStatusChannel
+
+	station := model.NewStation(element.ID)
+	station.FormattedAddress = stationDetails.FormattedAddress
+	station.Name = stationDetails.Name
+	station.NetworkName = stationDetails.NetworkName
+	station.PostCode = stationDetails.PostCode
+	station.Location = stationDetails.Location
+	station.DistanceInKm = geoService.CalculateDistanceInKm(currentLocation, stationDetails.Location)
+	station.Devices = devices
+	return station
 }
 
 func (service *StationService) GetAllDetails(stationID string) *model.Station {
@@ -226,7 +255,7 @@ func (service *StationService) GetAllDetails(stationID string) *model.Station {
 	return stationDetails
 }
 
-func (service *StationService) SortByDistance(stations []model.Station) {
+func (service *StationService) SortByDistance(stations []*model.Station) {
 	sort.Slice(stations, func(i, j int) bool {
 		return stations[i].DistanceInKm < stations[j].DistanceInKm
 	})

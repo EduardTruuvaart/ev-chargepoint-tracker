@@ -156,7 +156,7 @@ func (bot *TelegramBot) RequestLocation(chatID int, text string) (string, error)
 	return bodyString, nil
 }
 
-func (bot *TelegramBot) SendStationSelectionButtons(chatID int, text string, stations []model.Station) (string, error) {
+func (bot *TelegramBot) SendStationSelectionButtons(chatID int, text string, stations []*model.Station) (string, error) {
 	var jsonStr = fmt.Sprintf(`
 {
 		"chat_id": %d,
@@ -238,7 +238,7 @@ func renderConnectorsText(connectors []model.Connector) string {
 	return sb.String()
 }
 
-func renderInlineStationButtons(stations []model.Station) string {
+func renderInlineStationButtons(stations []*model.Station) string {
 	var sb strings.Builder
 	sb.WriteString(`
 	"inline_keyboard": [
