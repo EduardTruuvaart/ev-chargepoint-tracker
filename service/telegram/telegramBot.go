@@ -204,7 +204,7 @@ func renderStationDetailsText(station *model.Station) string {
 	return messageText
 }
 
-func renderStationDevicesText(devices []model.Device) string {
+func renderStationDevicesText(devices []*model.Device) string {
 	var sb strings.Builder
 	for index, element := range devices {
 		sb.WriteString(fmt.Sprintf(`
