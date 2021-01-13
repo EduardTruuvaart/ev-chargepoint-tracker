@@ -11,14 +11,14 @@ type Station struct {
 	FormattedAddress string
 	PostCode         string
 	Location         Location
-	Devices          []Device
+	Devices          []*Device
 	DistanceInKm     float64
 }
 
 func NewStation(id string) *Station {
 	return &Station{
 		ID:      id,
-		Devices: []Device{},
+		Devices: []*Device{},
 	}
 }
 

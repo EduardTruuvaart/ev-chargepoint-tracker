@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 
 type StationService struct {
 	ApiKey            string
-	getStatus         func(stationID string) *model.Station
+	getStatus         func(stationID string) []*model.Device
 	search            func(location model.Location) []*model.Station
 	getDetails        func(stationID string) *model.Station
 	fulfillAllDetails func(currentLocation model.Location, stations []*model.Station) []*model.Station
@@ -27,13 +28,28 @@ func NewStationService(apiKey string) *StationService {
 	return &StationService{ApiKey: apiKey}
 }
 
-func (service *StationService) GetStatus(stationID string) []model.Device {
-	client := &http.Client{}
+func createHttpClient() *http.Client {
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		Dial: (&net.Dialer{
+			Timeout:   0,
+			KeepAlive: 0,
+		}).Dial,
+		TLSHandshakeTimeout: 20 * time.Second,
+	}
+
+	return &http.Client{Transport: transport}
+}
+
+func (service *StationService) GetStatus(stationID string) []*model.Device {
+	client := createHttpClient()
 
 	requestURI := fmt.Sprintf("https://api.zap-map.com/v5/chargepoints/location/%s/status", stationID)
 
 	req, err := http.NewRequest("GET", requestURI, nil)
 	req.Header.Add("X-Api-Key", service.ApiKey)
+	req.Header.Set("Connection", "close")
+	req.Close = true
 
 	if err != nil {
 		fmt.Println("Get Error")
@@ -42,16 +58,16 @@ func (service *StationService) GetStatus(stationID string) []model.Device {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Get Error")
+		fmt.Printf("GetStatus request error: %v\n", err)
 		return nil
 	}
-
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Body Error")
 	}
+	resp.Body.Close()
 
 	var result map[string]interface{}
 	json.Unmarshal(body, &result)
@@ -61,7 +77,7 @@ func (service *StationService) GetStatus(stationID string) []model.Device {
 	var devices = chargePointsData.(map[string]interface{})["devices"]
 	devicesArr := devices.([]interface{})
 
-	devicesObjArr := []model.Device{}
+	devicesObjArr := []*model.Device{}
 	for _, element := range devicesArr {
 		deviceIDFloat := element.(map[string]interface{})["id"].(float64)
 		deviceStatus := element.(map[string]interface{})["status"].(map[string]interface{})["description"]
@@ -99,19 +115,21 @@ func (service *StationService) GetStatus(stationID string) []model.Device {
 			device.StatusHistory = append(device.StatusHistory, status)
 		}
 
-		devicesObjArr = append(devicesObjArr, *device)
+		devicesObjArr = append(devicesObjArr, device)
 	}
 
 	return devicesObjArr
 }
 
 func (service *StationService) Search(location model.Location) []*model.Station {
-	client := &http.Client{}
+	client := createHttpClient()
 
 	requestURI := fmt.Sprintf("https://api.zap-map.com/v5/chargepoints/locations/search?lat=%v&long=%v&radius=2&unit=KM&connector-types=&networks=&payments=&location-types=&access=2&ev-models=", location.Latitude, location.Longitude)
 
 	req, err := http.NewRequest("GET", requestURI, nil)
 	req.Header.Add("X-Api-Key", service.ApiKey)
+	req.Header.Set("Connection", "close")
+	req.Close = true
 
 	if err != nil {
 		fmt.Println("Get Error")
@@ -120,7 +138,7 @@ func (service *StationService) Search(location model.Location) []*model.Station 
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Get Error")
+		fmt.Printf("Search request error: %v\n", err)
 		return nil
 	}
 
@@ -148,12 +166,14 @@ func (service *StationService) Search(location model.Location) []*model.Station 
 }
 
 func (service *StationService) GetDetails(stationID string) *model.Station {
-	client := &http.Client{}
+	client := createHttpClient()
 
 	requestURI := fmt.Sprintf("https://api.zap-map.com/v5/chargepoints/locations/placecards?id=%s", stationID)
 
 	req, err := http.NewRequest("GET", requestURI, nil)
 	req.Header.Add("X-Api-Key", service.ApiKey)
+	req.Header.Set("Connection", "close")
+	req.Close = true
 
 	if err != nil {
 		fmt.Println("Get Error")
@@ -162,7 +182,7 @@ func (service *StationService) GetDetails(stationID string) *model.Station {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Get Error")
+		fmt.Printf("GetDetails request error: %v\n", err)
 		return nil
 	}
 
@@ -221,7 +241,7 @@ func (service *StationService) getAllStationDetails(element *model.Station, fulf
 	var geoService geo.GeoService
 
 	stationDetailsChannel := make(chan *model.Station)
-	stationStatusChannel := make(chan []model.Device)
+	stationStatusChannel := make(chan []*model.Device)
 
 	go func() {
 		sd := service.GetDetails(element.ID)

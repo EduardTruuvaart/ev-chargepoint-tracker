@@ -7,18 +7,43 @@ import (
 	"time"
 
 	"github.com/EduardTruuvaart/ev-chargepoint-tracker/domain/model"
+	"github.com/EduardTruuvaart/ev-chargepoint-tracker/service/stations"
 )
 
 func main() {
-	stationID := os.Getenv("STATIONID")
-	if len(stationID) == 0 {
-		panic("StationID is not provided")
-	}
+
+	// stationID := os.Getenv("STATIONID")
+	// if len(stationID) == 0 {
+	// 	panic("StationID is not provided")
+	// }
 
 	apiKey := os.Getenv("APIKEY")
 	if len(apiKey) == 0 {
 		panic("APIKEY env var is not set!")
 	}
+
+	//location := model.Location{Latitude: 51.384555, Longitude: -0.320756}
+	location := model.Location{Latitude: 51.494698, Longitude: -0.153487}
+	stationService := stations.NewStationService(apiKey)
+
+	start := time.Now()
+
+	stations := stationService.Search(location)
+	fmt.Printf("Stations count: %v\n", len(stations))
+	stations = stationService.FulfillAllDetails(location, stations)
+
+	elapsed := time.Since(start)
+	fmt.Println(elapsed)
+
+	// var wg sync.WaitGroup
+	// wg.Add(10)
+	// for i := 0; i < 10; i++ {
+	// 	go func(j int) {
+	// 		notifyStatusChanged(fmt.Sprintf("Hello %v", j))
+	// 		wg.Done()
+	// 	}(i)
+	// }
+	// wg.Wait()
 
 	//stationService := stations.NewStationService(apiKey)
 	//devices := stationService.GetStatus("892")
