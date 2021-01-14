@@ -1,8 +1,10 @@
-# EV Chargepoint Tracker
-Tracking availability of electric vehicle charge points
+# EV Chargepoint Telegram Bot
+Telegram messanger chat bot that shows EV charging stations around your location
 
-## Running using Docker container
+## Deploying Telegram handler to AWS Lambda
 ```
-docker build --tag tracker:latest .
-docker run -it --rm -e APIKEY=<api_key> -e AWS_ACCESS_KEY_ID=<aws_key> -e AWS_SECRET_ACCESS_KEY=<aws_secret> -e AWS_DEFAULT_REGION=<aws_region> -e STATIONID=<station_id> tracker
+1. cd cmd/bot/
+2. GOOS=linux go build main.go
+3. zip function.zip main
+4. deploy function.zip to AWS Lambda
 ```

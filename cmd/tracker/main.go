@@ -11,18 +11,11 @@ import (
 )
 
 func main() {
-
-	// stationID := os.Getenv("STATIONID")
-	// if len(stationID) == 0 {
-	// 	panic("StationID is not provided")
-	// }
-
 	apiKey := os.Getenv("APIKEY")
 	if len(apiKey) == 0 {
 		panic("APIKEY env var is not set!")
 	}
 
-	//location := model.Location{Latitude: 51.384555, Longitude: -0.320756}
 	location := model.Location{Latitude: 51.494698, Longitude: -0.153487}
 	stationService := stations.NewStationService(apiKey)
 
