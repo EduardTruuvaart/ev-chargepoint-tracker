@@ -7,6 +7,7 @@ vendor/
 *.dll
 *.so
 *.dylib
+*.zip
 
 # Test binary, built with `go test -c`
 *.test
@@ -20,6 +21,7 @@ vendor/
 .DS_Store
 .idea
 main
+bot
 !**/*.go
 
 /build/
