@@ -35,7 +35,7 @@ func createHttpClient() *http.Client {
 			Timeout:   0,
 			KeepAlive: 0,
 		}).Dial,
-		TLSHandshakeTimeout: 20 * time.Second,
+		TLSHandshakeTimeout: 10 * time.Second,
 	}
 
 	return &http.Client{Transport: transport}
@@ -48,8 +48,6 @@ func (service *StationService) GetStatus(stationID string) []*model.Device {
 
 	req, err := http.NewRequest("GET", requestURI, nil)
 	req.Header.Add("X-Api-Key", service.ApiKey)
-	req.Header.Set("Connection", "close")
-	req.Close = true
 
 	if err != nil {
 		fmt.Println("Get Error")
@@ -128,8 +126,6 @@ func (service *StationService) Search(location model.Location) []*model.Station 
 
 	req, err := http.NewRequest("GET", requestURI, nil)
 	req.Header.Add("X-Api-Key", service.ApiKey)
-	req.Header.Set("Connection", "close")
-	req.Close = true
 
 	if err != nil {
 		fmt.Println("Get Error")
@@ -172,8 +168,6 @@ func (service *StationService) GetDetails(stationID string) *model.Station {
 
 	req, err := http.NewRequest("GET", requestURI, nil)
 	req.Header.Add("X-Api-Key", service.ApiKey)
-	req.Header.Set("Connection", "close")
-	req.Close = true
 
 	if err != nil {
 		fmt.Println("Get Error")
