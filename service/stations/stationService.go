@@ -28,16 +28,6 @@ func NewStationService(apiKey string) *StationService {
 }
 
 func createHttpClient() *http.Client {
-	// transport := &http.Transport{
-	// 	Proxy: http.ProxyFromEnvironment,
-	// 	Dial: (&net.Dialer{
-	// 		Timeout:   0,
-	// 		KeepAlive: 0,
-	// 	}).Dial,
-	// 	TLSHandshakeTimeout: 10 * time.Second,
-	// }
-
-	// return &http.Client{Transport: transport}
 	return &http.Client{}
 }
 
