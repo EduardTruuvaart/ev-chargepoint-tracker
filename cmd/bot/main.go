@@ -41,9 +41,9 @@ func handle(ctx context.Context, request events.APIGatewayProxyRequest) (events.
 	if update.Message.Location != nil {
 		currentLocation := *update.Message.Location
 		bot.AnswerWithRemoveKeyboard(update.Message.Chat.ID, "Here is all stations in 2 KM radius:")
-		stations := stationService.Search(currentLocation)
-		if len(stations) > 0 {
-			stations = stationService.FulfillAllDetails(currentLocation, stations)
+		stationIDs := stationService.Search(currentLocation)
+		if len(stationIDs) > 0 {
+			stations := stationService.GetStations(currentLocation, stationIDs)
 			bot.SendStationSelectionButtons(update.Message.Chat.ID, "Select one for more details:", stations)
 			return createAPIResponse(200), nil
 		}
@@ -71,7 +71,7 @@ func processCommandRequest(bot *telegram.TelegramBot, message string, chatID int
 
 	if strings.HasPrefix(loweredText, "/details ") {
 		stringSlice := strings.Split(loweredText, " ")
-		station := stationService.GetAllDetails(stringSlice[1])
+		station := stationService.GetStationDetails(stringSlice[1])
 		bot.SendStationDetails(chatID, station)
 	}
 }

@@ -28,9 +28,9 @@ func main() {
 
 	start := time.Now()
 
-	stations := stationService.Search(location)
-	fmt.Printf("Stations count: %v\n", len(stations))
-	stations = stationService.FulfillAllDetails(location, stations)
+	stationIDs := stationService.Search(location)
+	fmt.Printf("Stations count: %v\n", len(stationIDs))
+	stationService.GetStations(location, stationIDs)
 
 	elapsed := time.Since(start)
 	fmt.Println(elapsed)

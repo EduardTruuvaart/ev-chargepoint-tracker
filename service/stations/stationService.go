@@ -17,10 +17,10 @@ import (
 type StationService struct {
 	ApiKey            string
 	getStatus         func(stationID string) []*model.Device
-	search            func(location model.Location) []*model.Station
+	search            func(location model.Location) []string
 	getDetails        func(stationID string) *model.Station
-	fulfillAllDetails func(currentLocation model.Location, stations []*model.Station) []*model.Station
-	getAllDetails     func(stationID string) *model.Station
+	getStations       func(currentLocation model.Location, stationIDs []string) []*model.Station
+	getStationDetails func(stationID string) *model.Station
 }
 
 func NewStationService(apiKey string) *StationService {
@@ -109,7 +109,7 @@ func (service *StationService) GetStatus(stationID string) []*model.Device {
 	return devicesObjArr
 }
 
-func (service *StationService) Search(location model.Location) []*model.Station {
+func (service *StationService) Search(location model.Location) []string {
 	client := createHttpClient()
 
 	requestURI := fmt.Sprintf("https://api.zap-map.com/v5/chargepoints/locations/search?lat=%v&long=%v&radius=2&unit=KM&connector-types=&networks=&payments=&location-types=&access=2&ev-models=", location.Latitude, location.Longitude)
@@ -141,11 +141,10 @@ func (service *StationService) Search(location model.Location) []*model.Station 
 	var chargePointLocationsData = result["resources"].(map[string]interface{})["search_chargepoint_locations"].(map[string]interface{})["data"]
 	dataArr := chargePointLocationsData.([]interface{})
 
-	stations := []*model.Station{}
-	for _, element := range dataArr {
+	stations := make([]string, len(dataArr))
+	for i, element := range dataArr {
 		stationIDFloat := element.(map[string]interface{})["id"].(float64)
-		station := model.NewStation(strconv.Itoa((int(stationIDFloat))))
-		stations = append(stations, station)
+		stations[i] = strconv.Itoa((int(stationIDFloat)))
 	}
 
 	return stations
@@ -201,18 +200,18 @@ func (service *StationService) GetDetails(stationID string) *model.Station {
 	return station
 }
 
-func (service *StationService) FulfillAllDetails(currentLocation model.Location, stations []*model.Station) []*model.Station {
-	fulfilledStations := make([]*model.Station, len(stations))
+func (service *StationService) GetStations(currentLocation model.Location, stationIDs []string) []*model.Station {
+	fulfilledStations := make([]*model.Station, len(stationIDs))
 
 	var wg sync.WaitGroup
-	wg.Add(len(stations))
+	wg.Add(len(stationIDs))
 
-	for i, element := range stations {
-		go func(element *model.Station, fulfilledStations []*model.Station, currentLocation model.Location, i int) {
+	for i, stationID := range stationIDs {
+		go func(stationID string, fulfilledStations []*model.Station, currentLocation model.Location, i int) {
 			defer wg.Done()
-			s := service.getAllStationDetails(element, fulfilledStations, currentLocation)
+			s := service.getAllStationDetails(stationID, fulfilledStations, currentLocation)
 			fulfilledStations[i] = s
-		}(element, fulfilledStations, currentLocation, i)
+		}(stationID, fulfilledStations, currentLocation, i)
 	}
 
 	wg.Wait()
@@ -221,26 +220,26 @@ func (service *StationService) FulfillAllDetails(currentLocation model.Location,
 	return fulfilledStations
 }
 
-func (service *StationService) getAllStationDetails(element *model.Station, fulfilledStations []*model.Station, currentLocation model.Location) *model.Station {
+func (service *StationService) getAllStationDetails(stationID string, fulfilledStations []*model.Station, currentLocation model.Location) *model.Station {
 	var geoService geo.GeoService
 
 	stationDetailsChannel := make(chan *model.Station)
 	stationStatusChannel := make(chan []*model.Device)
 
 	go func() {
-		sd := service.GetDetails(element.ID)
+		sd := service.GetDetails(stationID)
 		stationDetailsChannel <- sd
 	}()
 
 	go func() {
-		d := service.GetStatus(element.ID)
+		d := service.GetStatus(stationID)
 		stationStatusChannel <- d
 	}()
 
 	stationDetails := <-stationDetailsChannel
 	devices := <-stationStatusChannel
 
-	station := model.NewStation(element.ID)
+	station := model.NewStation(stationID)
 	station.FormattedAddress = stationDetails.FormattedAddress
 	station.Name = stationDetails.Name
 	station.NetworkName = stationDetails.NetworkName
@@ -251,7 +250,7 @@ func (service *StationService) getAllStationDetails(element *model.Station, fulf
 	return station
 }
 
-func (service *StationService) GetAllDetails(stationID string) *model.Station {
+func (service *StationService) GetStationDetails(stationID string) *model.Station {
 	stationDetails := service.GetDetails(stationID)
 	devices := service.GetStatus(stationID)
 	stationDetails.Devices = devices
